@@ -10,7 +10,7 @@ The workflow was developed for a study evaluating the relationship between clini
 
 ## Environment
 
-Core Python dependencies are listed in `requirements.txt`.
+Core Python dependencies are listed in `Requirements.txt`.
 
 ## Repository structure
 
