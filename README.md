@@ -1,208 +1,62 @@
-# Propofol-
+# Propofol Induction Lifespan Reconstruction
 
-Code and documentation for **large-scale pharmacokinetic reconstruction of propofol effect-site concentrations during anaesthetic induction**.
+**Code and documentation for pharmacokinetic reconstruction of 250,640 adult propofol inductions.**
 
-This repository contains the code used for cohort extraction, pharmacokinetic simulation, statistical modeling, and generation of the main manuscript and supplementary appendix outputs corresponding to the current BJA correspondence and supplement.
+This repository contains the analytic pipeline used for cohort extraction, pharmacokinetic (PK) simulation, statistical modelling, and validation for the manuscript: **"Large-scale pharmacokinetic reconstruction of propofol effect-site concentrations during anaesthetic induction."**
 
-## Project summary
+## Project Summary
 
-This project reconstructs propofol effect-site concentration trajectories during anaesthetic induction using high-resolution medication timestamps from a large retrospective perioperative dataset. The primary pharmacokinetic framework is the **Eleveld model**, with **Schnider-model sensitivity analyses**. The main goal is to examine whether age-related reductions in clinician-administered induction dose are sufficient, in model-based terms, to track the age-adjusted decline in propofol hypnotic requirement.
+This project reconstructs propofol effect-site concentration trajectories during anaesthetic induction using high-resolution medication timestamps from a large retrospective perioperative dataset (UCLA, 2013–2026).
 
-The current correspondence focuses on the relationship between:
+The primary objective is to evaluate whether age-related reductions in clinician-administered doses are sufficient, in model-based terms, to track the age-adjusted decline in propofol hypnotic sensitivity. The analysis focuses on the divergence between:
 
-* observed clinician-administered induction dose
-* modelled peak effect-site concentration (**Ce,max**)
-* the age-adjusted **Ce50** benchmark derived from the propofol-only Eleveld model
-* the model-predicted proportional dose reduction required to align modelled peak exposure with the age-adjusted benchmark
+1. **Observed clinician behaviour:** weight-normalised induction dose ($\mathrm{mg~kg^{-1}}$)
+2. **Modelled exposure:** peak effect-site concentration ($C_{e,\max}$)
+3. **The age-adjusted $Ce_{50}$ benchmark:** derived from the propofol-only Eleveld model
+4. **The model-predicted required dose ($D_{\mathrm{req}}$):** the proportional dose reduction required to align modelled exposure with the benchmark while preserving the observed pattern of drug delivery
 
-## Associated manuscript and supplement
+## Repository Workflow
 
-This repository corresponds to the current BJA correspondence, **“Large-scale pharmacokinetic reconstruction of propofol effect-site concentrations during anaesthetic induction,”** and its supplementary appendix. The correspondence describes the primary cohort, modeling framework, and age-associated divergence between observed clinician dosing and age-adjusted model-derived benchmarks. The supplement provides expanded methodology, cohort derivation, statistical details, sensitivity analyses, validation against TivaTrainer, and repository organization.
+The workflow is organized into sequential stages for transparency and reproducibility.
 
-## Data source and availability
+### 1. Cohort Extraction (`01_extract_propofol_induction_dataset.ipynb`)
+SQL-based retrieval of eligible adult general anaesthesia cases, identification of the 10-minute induction window, and assembly of bolus and infusion records.
 
-Analyses were performed on a de-identified dataset derived from the UCLA perioperative data warehouse. Because of institutional privacy restrictions, the source perioperative electronic health record data cannot be shared publicly.
+### 2. Baseline Characterization (`02_generate_table1_age_stratified.ipynb`)
+Generation of age-stratified cohort summaries and the baseline descriptive statistics presented in **Table S1**.
 
-This repository provides the code used for data extraction, pharmacokinetic reconstruction, statistical analyses, and generation of manuscript-ready figures and tables.
+### 3. Pharmacokinetic Reconstruction (`03_simulate_propofol_ce_models.ipynb`)
+The core simulation engine. Reconstructs $C_e$ trajectories at 1-second resolution using observed event-level medication records.
 
-## Repository workflow
+- **Primary framework:** Eleveld (2018) model
+- **Sensitivity framework:** Schnider (1998) model
+- **Alignment:** all cases anchored to the first propofol administration ($t = 0$)
 
-The repository is organized around the core analytic steps of the study:
+### 4. Primary Regression and Main Figure (`04_analyze_eleveld_outputs.ipynb`)
+Implements B-spline regression (5 degrees of freedom) to model continuous age-associated trajectories for dose, exposure, and benchmarks. This notebook generates **Figure 1 (Panels A–C)**, including the $D_{\mathrm{req}}$ trajectory.
 
-### 1. Cohort extraction and medication retrieval
+### 5. Sensitivity Analyses (`05_sensitivity_analyses.ipynb`)
+Evaluates robustness under alternative specifications, including:
 
-Notebook for extraction of eligible adult general anaesthesia cases, identification of the induction window, and retrieval of propofol administrations recorded as boluses and infusion events.
+- Schnider PK model comparison
+- inclusion of the administratively masked age $\geq 90$ yr cohort
+- adjustment for co-administered induction adjuncts (for example fentanyl, midazolam, ketamine, and etomidate)
 
-### 2. Baseline cohort characterization
+### 6. External Validation (`06_external_validation_against_tivatrainer.ipynb`)
+Assesses simulation fidelity by comparing Python-generated trajectories against TivaTrainer benchmark outputs for representative bolus and infusion scenarios (**Figure S2**).
 
-Notebook for generation of age-stratified cohort summaries and manuscript-ready baseline descriptive tables.
+## Main Manuscript Output
 
-### 3. Pharmacokinetic reconstruction
+**Figure 1. Divergence between observed induction dosing and age-adjusted model-derived reference trajectories.**
 
-Notebook for retrospective effect-site concentration simulation using observed event-level propofol administration records.
+- **Panel A:** modelled $C_{e,\max}$ versus the age-adjusted $Ce_{50}$ benchmark
+- **Panel B:** observed clinician dose versus the $D_{\mathrm{req}}$ required to track the benchmark
+- **Panel C:** relative age-associated decline indexed to a young-adult baseline
 
-Key features include:
+## Data Transparency and Reproducibility
 
-* event alignment relative to the first propofol dose
-* simulation at 1-second resolution over a 900-second horizon
-* handling of discrete bolus doses and continuous infusion events
-* primary Eleveld-model simulation
-* Schnider-model sensitivity reconstruction
-* export of patient-level peak effect-site concentrations
-
-### 4. Primary regression and figure generation
-
-Notebook for spline-based regression modeling of age-associated changes in:
-
-* observed induction dose normalized to adjusted body weight
-* modelled peak effect-site concentration (**Ce,max**)
-* age-adjusted **Ce50** benchmark
-* model-predicted required dose to align modelled peak exposure with the benchmark
-
-This workflow also generates the main manuscript figure and supporting summary tables.
-
-### 5. Sensitivity analyses
-
-Notebook for alternative modeling and preprocessing analyses, including:
-
-* Schnider pharmacokinetic model
-* unadjusted analyses
-* broader-input cohort definitions
-* inclusion of the administratively masked age ≥90 cohort
-* adjustment for co-administered induction medications
-
-## Main manuscript output
-
-### Figure 1. Divergence between observed propofol induction dosing and age-adjusted model-derived benchmarks across the adult lifespan
-
-This figure is the primary manuscript figure and contains three panels:
-
-* **Panel A:** modelled peak effect-site concentration (**Ce,max**) versus the age-adjusted **Ce50** benchmark
-* **Panel B:** observed clinician-administered induction dose versus the model-predicted dose required to align modelled peak exposure with the benchmark
-* **Panel C:** relative age-associated decline in observed dose, modelled exposure, benchmark requirement, and model-predicted required dose
-
-Together, these analyses show that although clinician-administered weight-normalized induction dose declines with age, modelled peak effect-site exposure declines much less than the age-adjusted benchmark.
-
-## Supplementary outputs discussed in the current supplement
-
-The README is intentionally aligned with the **current supplementary appendix** and focuses on the tables and figures described there.
-
-### Figure S1. Study flow diagram
-
-Shows derivation of the final analytic cohort from the original extraction, including sequential exclusions for:
-
-* implausible induction dose
-* missing dose documentation
-* missing simulation variables
-* physiologic outliers
-* administratively masked age ≥90 years in the primary analysis
-
-### Table S1. Baseline characteristics and induction practice by age stratum
-
-Provides age-stratified cohort characteristics across the prespecified age groups, including:
-
-* age
-* weight
-* body mass index
-* female sex proportion
-* ASA physical status distribution
-* proportion receiving an infusion during induction
-* proportion receiving more than one bolus during induction
-
-### Table S2. Primary age-stratified model outputs
-
-Provides the age-stratified adjusted estimates underlying the primary analysis, including:
-
-* observed induction dose (mg/kg adjusted body weight)
-* modelled peak effect-site concentration (**Ce,max**)
-* age-adjusted **Ce50** benchmark
-* percentage surplus by which **Ce,max** exceeds the benchmark
-
-### Table S3. Sensitivity analyses
-
-Summarizes robustness analyses across alternative specifications, including:
-
-* Schnider PK model
-* arithmetic/raw analysis
-* broader-input cohort
-* age-90+ extended analysis
-* additional adjustment for co-administered induction medications
-
-These analyses show that the central age-associated divergence pattern remains consistent across alternate modeling assumptions.
-
-## External validation against TivaTrainer
-
-### Figure S2 and validation table
-
-The supplement also includes an external face-validation section comparing the automated reconstruction workflow against **TivaTrainer**.
-
-Two representative induction scenarios were recreated independently in TivaTrainer:
-
-* a **single-bolus** scenario
-* a **bolus-plus-infusion** scenario
-
-Figure S2 displays representative effect-site concentration trajectories for these scenarios under:
-
-* the **Eleveld model** (solid lines)
-* the **Schnider model** (dashed lines)
-
-The accompanying validation table reports the corresponding scenario characteristics and peak effect-site concentrations generated by:
-
-* the study workflow
-* TivaTrainer under Eleveld
-* TivaTrainer under Schnider
-
-Across these benchmark scenarios, the reconstructed peak values closely matched the TivaTrainer outputs, supporting the fidelity of:
-
-* event parsing
-* time alignment
-* unit conversion
-* model implementation
-
-This validation section is important because it demonstrates that the retrospective simulation workflow reproduces expected outputs for representative dosing patterns before being applied at scale to the full observational cohort.
-
-## Current notebook-to-output correspondence
-
-The supplement describes the repository as containing notebooks for the following purposes:
-
-* **01_extract_propofol_induction_dataset.ipynb**
-  Cohort extraction, induction-window medication retrieval, and assembly of the analysis-ready long-format propofol dataset.
-
-* **02_generate_table1_age_stratified.ipynb**
-  Generation of age-stratified baseline descriptive tables.
-
-* **03_simulate_propofol_ce_models.ipynb**
-  Primary Eleveld-based pharmacokinetic reconstruction, Schnider sensitivity-model simulation, and export of patient-level peak effect-site concentration outputs.
-
-* **04_analyze_eleveld_outputs.ipynb**
-  Primary regression workflow using Eleveld-derived exposure outputs, generation of the main manuscript figure, and export of manuscript-ready summary tables.
-
-* **05_sensitivity_analyses.ipynb**
-  Robustness analyses under alternative modeling assumptions and preprocessing definitions.
-
-* **requirements.txt**
-  Python dependencies required to reproduce the computational environment.
-
-* **README.md**
-  Repository overview, workflow description, notebook map, and reproducibility notes.
-
-## Reproducibility notes
-
-To reproduce the analyses, the general order is:
-
-1. extract and assemble the induction dataset
-2. generate baseline descriptive summaries
-3. simulate propofol effect-site concentration trajectories
-4. run the primary Eleveld analysis
-5. run sensitivity analyses
-6. export manuscript and supplementary tables/figures
-
-Because the underlying source data are not public, full end-to-end execution requires access to the institutional source dataset or an equivalent local extract.
-
-## Citation
-
-If this repository is used or referenced, please cite the associated correspondence and supplementary appendix.
+Due to institutional privacy restrictions (UCLA IRB #26-0331), raw patient-level source data cannot be shared publicly. The repository therefore provides the full analytic workflow, manuscript-aligned notebooks, and validation examples to support transparency and code review.
 
 ## Disclaimer
 
-All effect-site concentration values in this project are **model-derived PK/PD constructs** and do not represent directly observed clinical drug effect or clinical outcomes.
+All effect-site concentration values in this repository are **model-derived PK/PD constructs**. They do not represent measured blood concentrations or directly observed clinical drug effect.
